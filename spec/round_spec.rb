@@ -1,14 +1,14 @@
 require 'spec_helper'
 
 describe PokerHands::Round do
-  subject { PokerHands::Round.new(*players) }
+  subject { PokerHands::Round.new(*player_names) }
 
-  context '2 players' do
-    let(:players) { ['player1', 'player2'] }
+  let(:players)      { double('players', winners_name: 'player1') }
+  let(:player_names) { ['player1', 'player2'] }
 
-    it 'creates 2 new players' do
-      PokerHands::Player.should_receive(:new).once.with('player1')
-      PokerHands::Player.should_receive(:new).once.with('player2')
+  describe '#initialize' do
+    it 'creates new players' do
+      PokerHands::Players.should_receive(:new).with(player_names).and_return(players)
       subject
     end
   end
