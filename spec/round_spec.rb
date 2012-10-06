@@ -12,4 +12,13 @@ describe PokerHands::Round do
       subject
     end
   end
+
+  describe '#display_winner' do
+    it 'returns the winning player' do
+      PokerHands::Players.stub(:new).and_return(players)
+      players.stub(winners_name: 'player1')
+      PokerHands::ResultOutputter.should_receive(:display).with('And the winner is player1')
+      subject.display_winner
+    end
+  end
 end
