@@ -7,5 +7,14 @@ module PokerHands
         end
       end.flatten
     end
+
+    def deal_hand
+      PokerHands::Hand.new select_5_random_cards
+    end
+
+    private
+    def select_5_random_cards
+      (1..5).map { @cards.delete(@cards.sample) }
+    end
   end
 end

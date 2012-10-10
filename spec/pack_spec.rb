@@ -4,13 +4,12 @@ describe PokerHands::Pack do
 
   let(:card) { double('card') }
 
-  before(:each) do
-    PokerHands::Card.stub(:new)
-  end
-
   describe '#initialize' do
+    before(:each) do
+      PokerHands::Card.stub(new: card)
+    end
+
     it 'create 52 cards' do
-      PokerHands::Card.should_receive(:new).exactly(52).times
       subject.instance_variable_get(:@cards).size.should == 52
     end
 
@@ -22,6 +21,17 @@ describe PokerHands::Pack do
     it 'creates a AS card' do
       PokerHands::Card.should_receive(:new).once.with('S', 'A')
       subject
+    end
+  end
+
+  describe '#deal_hand' do
+    it 'chooses 5 different cards' do
+      subject.deal_hand.uniq.size.should == 5
+    end
+
+    it 'removes the chosen cards from the pack' do
+      (pack = subject).deal_hand
+      pack.instance_variable_get(:@cards).size.should == 47
     end
   end
 end
