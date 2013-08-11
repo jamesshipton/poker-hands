@@ -1,3 +1,10 @@
+module Enumerable
+  def sort_by_frequency
+    histogram = each_with_object(Hash.new(0)) { |x, hash| hash[x.value] += 1 }
+    sort_by { |x| [histogram[x.value], x] }
+  end
+end
+
 Game = Class.new do
   def initialize(cards_1, cards_2)
     self.hand_1 = Hand.new(cards_1)
@@ -10,31 +17,46 @@ Game = Class.new do
     elsif hand_1 < hand_2
       "Hand 2 wins with #{hand_2.value}"
     else
-      puts 'equal'
+      compare_cards hand_1.cards, hand_2.cards
     end
   end
 
   private
   attr_accessor :hand_1, :hand_2
+
+  def compare_cards(hand_1_cards, hand_2_cards)
+    hand_1_card = hand_1_cards.pop
+    hand_2_card = hand_2_cards.pop
+
+    if hand_1_card > hand_2_card
+      "Hand 1 wins with #{hand_1.value}"
+    elsif hand_2_card > hand_1_card
+      "Hand 2 wins with #{hand_2.value}"
+    else
+      compare_cards hand_1_cards, hand_2_cards
+    end
+  end
 end
 
 Hand = Class.new do
   include Comparable
 
-  HAND_RANK = [
-      :high_card,
-      :one_pair,
-      :two_pair,
-      :three_of_a_kind,
-      :straight,
-      :flush,
-      :full_house,
-      :four_of_a_kind,
-      :straight_flush,
-    ]
+  attr_reader :cards
 
-  def initialize(hand)
-    self.cards = hand.map { |c| Card.new(c) }
+  HAND_RANK = [
+    :straight_flush,
+    :four_of_a_kind,
+    :full_house,
+    :flush,
+    :straight,
+    :three_of_a_kind,
+    :two_pair,
+    :one_pair,
+    :high_card,
+  ]
+
+  def initialize(card_names)
+    self.cards = card_names.map { |c| Card.new(c) }.sort_by_frequency
   end
 
   def value
@@ -42,15 +64,15 @@ Hand = Class.new do
   end
 
   private
-  attr_accessor :cards
+  attr_writer :cards
 
   def <=>(other)
-    HAND_RANK.index(value) <=> HAND_RANK.index(other.value)
+    HAND_RANK.index(other.value) <=> HAND_RANK.index(value)
   end
 
   def high_card?
     cards_with_matching_values.empty? &&
-      !sorted_cards_have_adjacent_values? &&
+      !cards_have_adjacent_values? &&
       !all_suits_match?
   end
 
@@ -68,11 +90,11 @@ Hand = Class.new do
   end
 
   def straight?
-    sorted_cards_have_adjacent_values? && !all_suits_match?
+    cards_have_adjacent_values? && !all_suits_match?
   end
 
   def flush?
-    all_suits_match? && !sorted_cards_have_adjacent_values?
+    all_suits_match? && !cards_have_adjacent_values?
   end
 
   def full_house?
@@ -84,7 +106,7 @@ Hand = Class.new do
   end
 
   def straight_flush?
-    all_suits_match? && sorted_cards_have_adjacent_values?
+    all_suits_match? && cards_have_adjacent_values?
   end
 
   def cards_with_matching_values
@@ -97,9 +119,9 @@ Hand = Class.new do
       cards_with_matching_values.all? { |c| c == cards_with_matching_values.first }
   end
 
-  def sorted_cards_have_adjacent_values?
-    @sorted_cards_have_adjacent_values ||=
-      cards.sort.each_cons(2).all? { |first, last| first.adjacent_value_to? last }
+  def cards_have_adjacent_values?
+    @cards_have_adjacent_values ||=
+      cards.each_cons(2).all? { |first, last| first.adjacent_value_to? last }
   end
 
   def all_suits_match?
@@ -112,7 +134,7 @@ Card = Class.new do
 
   attr_reader :value, :suit
 
-  CARD_RANK = %w(2 3 4 5 6 7 8 9 T J Q K A)
+  CARD_RANK = %w(A K Q J T 9 8 7 6 5 4 3 2)
 
   def initialize(card)
     /(?<value>^[2-9TAKQJ])(?<suit>[CDHS]$)/ =~ card
@@ -121,14 +143,14 @@ Card = Class.new do
   end
 
   def adjacent_value_to?(other)
-    (card_rank_index(value) + 1) == card_rank_index(other.value)
+    card_rank_index(value) == card_rank_index(other.value) + 1
   end
 
   private
   attr_writer :value, :suit
 
   def <=>(other)
-    card_rank_index(value) <=> card_rank_index(other.value)
+    card_rank_index(other.value) <=> card_rank_index(value)
   end
 
   def card_rank_index(value)
